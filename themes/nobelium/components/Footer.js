@@ -1,29 +1,33 @@
-import DarkModeButton from '@/components/DarkModeButton'
-import Vercel from '@/components/Vercel'
+import { Moon, Sun } from '@/components/HeroIcons'
+import SmartLink from '@/components/SmartLink'
 import { siteConfig } from '@/lib/config'
+import { useGlobal } from '@/lib/global'
 
-export const Footer = (props) => {
-  const d = new Date()
-  const currentYear = d.getFullYear()
-  const { post } = props
-  const fullWidth = post?.fullWidth ?? false
-  const since = siteConfig('SINCE')
-  const copyrightDate = parseInt(since) < currentYear ? since + '-' + currentYear : currentYear
-
-  return <footer
-     className={`z-10 relative mt-6 flex-shrink-0 m-auto w-full text-gray-500 dark:text-gray-400 transition-all ${
-       !fullWidth ? 'max-w-2xl px-4' : 'px-4 md:px-24'
-     }`}
-   >
-     <DarkModeButton className='text-center py-4'/>
-     <hr className="border-gray-200 dark:border-gray-600" />
-     <div className="my-4 text-sm leading-6">
-       <div className="flex align-baseline justify-between flex-wrap">
-         <p>
-           © {siteConfig('AUTHOR')} {copyrightDate}
-         </p>
-         <Vercel />
-       </div>
-     </div>
-   </footer>
+export function Footer() {
+  const { isDarkMode, toggleDarkMode } = useGlobal()
+  const year = new Date().getFullYear()
+  const since = Number(siteConfig('SINCE'))
+  return (
+    <footer className='reading-footer'>
+      <p>
+        © {since < year ? `${since}–${year}` : year} {siteConfig('AUTHOR')}
+      </p>
+      <p>
+        Powered by{' '}
+        <SmartLink href='https://github.com/notionnext-org/NotionNext'>
+          NotionNext
+        </SmartLink>
+        <span className='reading-footer-dot'>·</span>
+        <SmartLink href='/rss/feed.xml'>RSS</SmartLink>
+      </p>
+      <button
+        type='button'
+        className='reading-theme-toggle'
+        onClick={toggleDarkMode}
+        aria-label={isDarkMode ? '切换为浅色模式' : '切换为深色模式'}
+      >
+        {isDarkMode ? <Sun /> : <Moon />}
+      </button>
+    </footer>
+  )
 }

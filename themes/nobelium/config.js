@@ -1,4 +1,12 @@
 const CONFIG = {
+  // 可在 Notion 配置中心用 JSON 数组覆盖顶部导航。
+  NOBELIUM_NAV_LINKS: [
+    { name: '文章', href: '/archive' },
+    { name: '标签', href: '/tag' },
+    { name: '友链', href: '/links' },
+    { name: '关于', href: '/about' },
+    { name: '搜索', href: '/search' }
+  ],
   NOBELIUM_NAV_NOTION_ICON: true, // 是否读取Notion图标作为站点头像 ; 否则默认显示黑色SVG方块
   NOBELIUM_COLOR_PRIMARY: '#6b7280',
 

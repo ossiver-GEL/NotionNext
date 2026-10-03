@@ -22,7 +22,7 @@ export const BlogListPage = props => {
     .replace('.html', '')
 
   return (
-    <div className='w-full md:pr-12 my-6'>
+    <div className='w-full my-6'>
       <div id='posts-wrapper'>
         {posts?.map(post => (
           <BlogPost key={post.id} post={post} />
@@ -38,7 +38,8 @@ export const BlogListPage = props => {
                 : `${pagePrefix}/page/${currentPage - 1}`,
             query: router.query.s ? { s: router.query.s } : {}
           }}
-          className={`${showPrev ? '  ' : ' invisible block pointer-events-none '}no-underline py-2 px-3 rounded`}>
+          className={`${showPrev ? '  ' : ' invisible block pointer-events-none '}no-underline py-2 px-3 rounded`}
+        >
           <button rel='prev' className='block cursor-pointer'>
             ← {locale.PAGINATION.PREV}
           </button>
@@ -48,7 +49,8 @@ export const BlogListPage = props => {
             pathname: `${pagePrefix}/page/${currentPage + 1}`,
             query: router.query.s ? { s: router.query.s } : {}
           }}
-          className={`${showNext ? '  ' : 'invisible pointer-events-none '}  no-underline py-2 px-3 rounded`}>
+          className={`${showNext ? '  ' : 'invisible pointer-events-none '}  no-underline py-2 px-3 rounded`}
+        >
           <button rel='next' className='block cursor-pointer'>
             {locale.PAGINATION.NEXT} →
           </button>

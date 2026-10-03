@@ -1,58 +1,36 @@
-
 import LazyImage from '@/components/LazyImage'
-import TagItem from './TagItem'
-import md5 from 'js-md5'
-import { siteConfig } from '@/lib/config'
-import { resolveContactEmail } from '@/lib/plugins/mailEncrypt'
-import NotionIcon from '@/components/NotionIcon'
+import SmartLink from '@/components/SmartLink'
+import { getPageContentText } from '@/lib/db/notion/getPageContentText'
+import { useMemo } from 'react'
 
-export const ArticleInfo = (props) => {
-  const { post } = props
-
-  const plainEmail = resolveContactEmail(siteConfig('CONTACT_EMAIL'))
-  const emailHash = md5((plainEmail || '#').toLowerCase())
-
-  return <section className="flex-wrap flex mt-2 text-gray--600 dark:text-gray-400 font-light leading-8">
-        <div>
-
-            <h1 className="font-bold text-3xl text-black dark:text-white">
-                {siteConfig('POST_TITLE_ICON') && <NotionIcon icon={post?.pageIcon} />}{post?.title}
-            </h1>
-
-            {post?.type !== 'Page' && <>
-                <nav className="flex mt-7 items-start text-gray-500 dark:text-gray-400">
-                    <div className="flex mb-4">
-                        <a href={siteConfig('CONTACT_GITHUB', '#')} className="flex">
-                            <LazyImage
-                                alt={siteConfig('AUTHOR')}
-                                width={24}
-                                height={24}
-                                src={`https://gravatar.com/avatar/${emailHash}`}
-                                className="rounded-full"
-                            />
-                            <p className="ml-2 md:block">{siteConfig('AUTHOR')}</p>
-                        </a>
-                        <span className="block">&nbsp;/&nbsp;</span>
-                    </div>
-                    <div className="mr-2 mb-4 md:ml-0">
-                        {post?.publishDay}
-                    </div>
-                    {post?.tags && (
-                        <div className="flex flex-nowrap max-w-full overflow-x-auto article-tags">
-                            {post?.tags.map(tag => (
-                                <TagItem key={tag} tag={tag} />
-                            ))}
-                        </div>
-                    )}
-                    <span className="hidden busuanzi_container_page_pv mr-2">
-                        <i className='mr-1 fas fa-eye' />
-                        &nbsp;
-                        <span className="mr-2 busuanzi_value_page_pv" />
-                    </span>
-                </nav>
-            </>}
-
+export function ArticleInfo({ post }) {
+  const count = useMemo(() => {
+    if (!post?.blockMap) return 0
+    return getPageContentText(post, post.blockMap).replace(/\s/g, '').length
+  }, [post])
+  return (
+    <header className='reading-article-header'>
+      <h1>{post?.title}</h1>
+      {post?.type !== 'Page' && (
+        <div className='reading-meta'>
+          <time dateTime={post?.date?.start_date}>{post?.publishDay}</time>
+          {count > 0 && (
+            <span>
+              约 {Math.max(1, Math.ceil(count / 400))} 分钟 · {count} 字
+            </span>
+          )}
+          {post?.tags?.map(tag => (
+            <SmartLink key={tag} href={`/tag/${encodeURIComponent(tag)}`}>
+              #{tag}
+            </SmartLink>
+          ))}
         </div>
-
-    </section>
+      )}
+      {post?.pageCover && (
+        <div className='reading-cover'>
+          <LazyImage src={post.pageCover} alt='' width={720} height={480} />
+        </div>
+      )}
+    </header>
+  )
 }

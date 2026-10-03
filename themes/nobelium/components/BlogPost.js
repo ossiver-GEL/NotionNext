@@ -1,44 +1,30 @@
-import NotionIcon from '@/components/NotionIcon'
-import NotionPage from '@/components/NotionPage'
-import { siteConfig } from '@/lib/config'
-import { useGlobal } from '@/lib/global'
 import SmartLink from '@/components/SmartLink'
 
-const BlogPost = ({ post }) => {
-  const { NOTION_CONFIG } = useGlobal()
-  const showPreview =
-    siteConfig('POST_LIST_PREVIEW', false, NOTION_CONFIG) && post?.blockMap
-
+export default function BlogPost({ post }) {
+  const date = post?.date?.start_date?.slice(0, 10) || post?.publishDay
   return (
-    <SmartLink href={post?.href}>
-      <article key={post.id} className='mb-6 md:mb-8'>
-        <header className='flex flex-col justify-between md:flex-row md:items-baseline'>
-          <h2 className='text-lg md:text-xl font-medium mb-2 cursor-pointer text-black dark:text-gray-100'>
-            {siteConfig('POST_TITLE_ICON') && (
-              <NotionIcon icon={post.pageIcon} />
-            )}
-            {post.title}
-          </h2>
-          <time className='flex-shrink-0 text-gray-600 dark:text-gray-400'>
-            {post?.publishDay}
-          </time>
-        </header>
-        <main>
-          {!showPreview && (
-            <p className='hidden md:block leading-8 text-gray-700 dark:text-gray-300'>
-              {post.summary}
-            </p>
+    <article className='reading-post-row'>
+      <time dateTime={post?.date?.start_date}>{date}</time>
+      <h2>
+        <SmartLink href={post.href || `/${post.slug}`}>
+          {post.title || '无题'}
+          {post.password && (
+            <svg
+              className='reading-lock'
+              viewBox='0 0 16 16'
+              width='14'
+              height='14'
+              fill='none'
+              stroke='currentColor'
+              role='img'
+              aria-label='需要密码'
+            >
+              <rect x='4' y='7' width='8' height='7' rx='1.5' />
+              <path d='M5.5 7V5a2.5 2.5 0 0 1 5 0v2' />
+            </svg>
           )}
-          {showPreview && post?.blockMap && (
-            <div className='overflow-ellipsis truncate'>
-              <NotionPage post={post} />
-              <hr className='border-dashed py-4' />
-            </div>
-          )}
-        </main>
-      </article>
-    </SmartLink>
+        </SmartLink>
+      </h2>
+    </article>
   )
 }
-
-export default BlogPost

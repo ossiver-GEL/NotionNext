@@ -5,14 +5,14 @@ const Tags = props => {
   const currentTag = tag
   if (!tagOptions) return null
   return (
-    <div className="tag-container">
-      <ul className="flex max-w-full mt-4 overflow-x-auto">
+    <div className='tag-container'>
+      <ul className='flex max-w-full mt-4 overflow-x-auto'>
         {Object.keys(tagOptions).map(key => {
           const tag = tagOptions[key]
           const selected = tag.name === currentTag
           return (
             <li
-              key={tag.id}
+              key={tag.name}
               className={`mr-3 font-medium border whitespace-nowrap dark:text-gray-300 ${
                 selected
                   ? 'text-white bg-black border-black dark:bg-gray-600 dark:border-gray-600'
@@ -20,12 +20,13 @@ const Tags = props => {
               }`}
             >
               <SmartLink
-                key={tag.id}
-                href={selected ? '/search' : `/tag/${encodeURIComponent(tag.name)}`}
-                className="px-4 py-2 block">
-
+                aria-current={selected ? 'page' : undefined}
+                href={
+                  selected ? '/search' : `/tag/${encodeURIComponent(tag.name)}`
+                }
+                className='px-4 py-2 block'
+              >
                 {`${tag.name} (${tag.count})`}
-
               </SmartLink>
             </li>
           )
