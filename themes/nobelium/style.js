@@ -136,7 +136,50 @@ export function Style() {
       }
       .reading-social {
         display: flex;
+        align-items: center;
         gap: 20px;
+        color: var(--reading-muted);
+      }
+      .reading-profile-content {
+        min-width: 0;
+      }
+      .reading-social button,
+      .reading-email-actions button {
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+      }
+      .reading-social button {
+        display: inline-flex;
+      }
+      .reading-social button:hover,
+      .reading-email-actions button:hover {
+        color: var(--reading-accent);
+      }
+      .reading-email-panel {
+        margin-top: 16px;
+        padding: 12px 16px;
+        border: 1px solid var(--reading-border);
+        border-radius: 6px;
+        background: var(--reading-panel);
+        font-size: 14px;
+      }
+      .reading-email-address {
+        overflow-wrap: anywhere;
+      }
+      .reading-email-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+        margin-top: 8px;
+        color: var(--reading-accent);
+      }
+      .reading-email-status {
+        margin-top: 8px;
+        font-size: 12px;
         color: var(--reading-muted);
       }
       .reading-list-label {

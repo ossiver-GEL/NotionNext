@@ -2,10 +2,23 @@ import SmartLink from '@/components/SmartLink'
 import { siteConfig } from '@/lib/config'
 import LazyImage from '@/components/LazyImage'
 import { resolveContactEmail } from '@/lib/plugins/mailEncrypt'
+import { useId, useState } from 'react'
 
 export default function Profile({ siteInfo }) {
   const github = siteConfig('CONTACT_GITHUB')
   const email = resolveContactEmail(siteConfig('CONTACT_EMAIL')).trim()
+  const emailPanelId = useId()
+  const [emailOpen, setEmailOpen] = useState(false)
+  const [copyStatus, setCopyStatus] = useState('')
+
+  const copyEmail = async () => {
+    try {
+      await navigator.clipboard.writeText(email)
+      setCopyStatus('邮箱已复制')
+    } catch {
+      setCopyStatus('复制失败，请选中邮箱地址手动复制。')
+    }
+  }
   return (
     <section className='reading-profile' aria-label='作者介绍'>
       {siteInfo?.icon && (
@@ -17,7 +30,7 @@ export default function Profile({ siteInfo }) {
           className='reading-avatar'
         />
       )}
-      <div>
+      <div className='reading-profile-content'>
         <h1>{siteConfig('AUTHOR')}</h1>
         <p>{siteConfig('BIO')}</p>
         <div className='reading-social'>
@@ -37,7 +50,17 @@ export default function Profile({ siteInfo }) {
             </SmartLink>
           )}
           {email && (
-            <a href={`mailto:${email}`} aria-label='发送邮件' title='发送邮件'>
+            <button
+              type='button'
+              aria-label='邮箱联系方式'
+              title='邮箱联系方式'
+              aria-expanded={emailOpen}
+              aria-controls={emailPanelId}
+              onClick={() => {
+                setEmailOpen(open => !open)
+                setCopyStatus('')
+              }}
+            >
               <svg
                 viewBox='0 0 24 24'
                 width='22'
@@ -50,7 +73,7 @@ export default function Profile({ siteInfo }) {
                 <rect x='3' y='5' width='18' height='14' rx='2' />
                 <path d='m3 6 9 7 9-7' />
               </svg>
-            </a>
+            </button>
           )}
           <SmartLink href='/rss/feed.xml' aria-label='RSS 订阅'>
             <svg
@@ -67,6 +90,22 @@ export default function Profile({ siteInfo }) {
             </svg>
           </SmartLink>
         </div>
+        {email && emailOpen && (
+          <div id={emailPanelId} className='reading-email-panel'>
+            <a href={`mailto:${email}`} className='reading-email-address'>
+              {email}
+            </a>
+            <div className='reading-email-actions'>
+              <button type='button' onClick={() => void copyEmail()}>
+                复制邮箱
+              </button>
+              <a href={`mailto:${email}`}>打开邮件应用</a>
+            </div>
+            <div className='reading-email-status' role='status'>
+              {copyStatus || '也可以复制地址，在常用邮箱中写信。'}
+            </div>
+          </div>
+        )}
       </div>
     </section>
   )
