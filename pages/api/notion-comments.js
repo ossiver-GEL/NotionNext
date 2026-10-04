@@ -131,7 +131,16 @@ export default async function handler(req, res) {
     }
 
     const properties = await getDatabaseProperties(notion)
-    const { postId, content, author, nickname, parentId } = validation.value
+    const { postId, content, author, nickname, websiteUrl, parentId } =
+      validation.value
+    if (requireApproval && !hasProperty(properties, 'Status', 'select')) {
+      return res.status(503).json({ error: 'Moderation is not configured' })
+    }
+    if (websiteUrl && !hasProperty(properties, 'Website', 'url')) {
+      return res
+        .status(503)
+        .json({ error: 'Website property is not configured' })
+    }
     const level = (await getParentLevel(notion, parentId, postId)) + 1
     const status = requireApproval ? 'Pending' : PUBLIC_COMMENT_STATUS
     const pageProperties = {
@@ -149,6 +158,9 @@ export default async function handler(req, res) {
 
     if (nickname && hasProperty(properties, 'Nickname', 'rich_text')) {
       pageProperties.Nickname = { rich_text: [{ text: { content: nickname } }] }
+    }
+    if (websiteUrl && hasProperty(properties, 'Website', 'url')) {
+      pageProperties.Website = { url: websiteUrl }
     }
     if (hasProperty(properties, 'EmailHash', 'rich_text')) {
       pageProperties.EmailHash = {

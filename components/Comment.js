@@ -13,7 +13,7 @@ import Artalk from './Artalk'
  * @param {*} param0
  * @returns
  */
-const Comment = ({ frontMatter, className }) => {
+const Comment = ({ frontMatter, className, hideSingleTab }) => {
   const router = useRouter()
   const [shouldLoad, setShouldLoad] = useState(false)
   const commentRef = useRef(null)
@@ -83,6 +83,22 @@ const Comment = ({ frontMatter, className }) => {
     return null
   }
 
+  if (
+    ![
+      COMMENT_ARTALK_SERVER,
+      COMMENT_TWIKOO_ENV_ID,
+      COMMENT_WALINE_SERVER_URL,
+      COMMENT_VALINE_APP_ID,
+      COMMENT_GISCUS_REPO,
+      COMMENT_CUSDIS_APP_ID,
+      COMMENT_UTTERRANCES_REPO,
+      COMMENT_GITALK_CLIENT_ID,
+      COMMENT_WEBMENTION_ENABLE,
+      COMMENT_NOTION_ENABLE
+    ].some(Boolean)
+  )
+    return null
+
   if (isSearchEngineBot) {
     return null
   }
@@ -108,7 +124,7 @@ const Comment = ({ frontMatter, className }) => {
       )}
 
       {shouldLoad && (
-        <Tabs>
+        <Tabs hideSingleTab={hideSingleTab}>
           {COMMENT_ARTALK_SERVER && (
             <div key='Artalk'>
               <Artalk />

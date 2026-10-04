@@ -335,7 +335,126 @@ export function Style() {
         padding: 5px 8px;
         text-decoration: none;
       }
+      .reading-theme .comment {
+        margin-top: 56px;
+        color: var(--reading-body);
+      }
+      .reading-theme .notion-comments {
+        font-family: inherit;
+      }
+      .reading-theme .nc-form {
+        padding: 22px 20px 18px;
+        border-color: var(--reading-border);
+        border-radius: 6px;
+        background: var(--reading-panel);
+      }
+      .reading-theme .nc-form-heading,
+      .reading-theme .nc-avatar {
+        display: none;
+      }
+      .reading-theme .nc-fields {
+        gap: 20px;
+      }
+      .reading-theme .nc-field {
+        display: block;
+        color: var(--reading-muted);
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      .reading-theme .nc-field input {
+        border-color: var(--reading-border);
+        border-radius: 0;
+        color: var(--reading-fg);
+        font: inherit;
+        min-height: 34px;
+      }
+      .reading-theme .nc-field input:focus {
+        border-color: var(--reading-accent);
+      }
+      .reading-theme .nc-field input::placeholder,
+      .reading-theme .nc-editor::placeholder {
+        color: var(--reading-muted);
+        opacity: 0.85;
+      }
+      .reading-theme .nc-editor,
+      .reading-theme .nc-preview {
+        min-height: 180px;
+        padding: 4px 0;
+        color: var(--reading-body);
+        font-family: inherit;
+        font-size: 15px;
+        line-height: 1.8;
+        border: 0;
+        resize: vertical;
+      }
+      .reading-theme .nc-editor:focus-visible {
+        outline: 1px solid var(--reading-accent);
+        outline-offset: 5px;
+      }
+      .reading-theme .nc-counter {
+        color: var(--reading-muted);
+        font-family: monospace;
+        font-size: 12px;
+      }
+      .reading-theme .nc-text-button,
+      .reading-theme .nc-toolbar {
+        color: var(--reading-muted);
+        font-family: inherit;
+        font-size: 14px;
+      }
+      .reading-theme .nc-submit {
+        background: var(--reading-fg);
+        color: var(--reading-bg);
+        font-family: inherit;
+        font-size: 14px;
+        border-radius: 4px;
+      }
+      .reading-theme .nc-list-heading {
+        padding-top: 8px;
+        margin-bottom: 10px;
+      }
+      .reading-theme .nc-list-heading h2 {
+        margin: 0;
+        color: var(--reading-fg);
+        font-size: 20px;
+      }
+      .reading-theme .nc-list-heading select,
+      .reading-theme .nc-meta time {
+        color: var(--reading-muted);
+        font-family: inherit;
+      }
+      .reading-theme .nc-list-heading select option {
+        background: var(--reading-panel);
+        color: var(--reading-fg);
+      }
+      .reading-theme .nc-item {
+        border-color: var(--reading-border);
+      }
+      .reading-theme .nc-meta {
+        gap: 14px;
+      }
+      .reading-theme .nc-meta span,
+      .reading-theme .nc-item p {
+        color: var(--reading-body);
+      }
+      .reading-theme .nc-item p {
+        font-size: 16px;
+        line-height: 1.8;
+      }
+      .reading-theme .nc-meta button {
+        color: var(--reading-muted);
+      }
+      .reading-theme .nc-empty {
+        color: var(--reading-muted);
+      }
       @media (max-width: 600px) {
+        .reading-theme .nc-fields {
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+        .reading-theme .nc-form {
+          padding: 18px 16px;
+        }
         .reading-header,
         .reading-main,
         .reading-footer {

@@ -91,6 +91,53 @@ describe('notionComments helpers', () => {
     })
   })
 
+  test('keeps profile links separate from the spam honeypot and rejects unsafe URLs', () => {
+    const payload = {
+      postId: 'post-1',
+      content: 'hello',
+      author: 'reader@example.com',
+      nickname: 'Reader'
+    }
+    expect(
+      validateCommentPayload({ ...payload, websiteUrl: 'https://example.com' })
+    ).toMatchObject({ ok: true, value: { websiteUrl: 'https://example.com/' } })
+    expect(
+      validateCommentPayload({ ...payload, websiteUrl: 'javascript:alert(1)' })
+    ).toEqual({ ok: false, error: 'Invalid website URL' })
+    expect(
+      validateCommentPayload({
+        ...payload,
+        websiteUrl: 'https://user:password@example.com'
+      }).ok
+    ).toBe(false)
+    expect(
+      validateCommentPayload({
+        ...payload,
+        website: 'spam',
+        websiteUrl: 'https://example.com'
+      })
+    ).toMatchObject({ ok: true, spam: true })
+    const comment = formatNotionComment({
+      id: 'test',
+      properties: {
+        Author: { type: 'email', email: 'private@example.com' },
+        Nickname: { type: 'rich_text', rich_text: [{ plain_text: 'Reader' }] },
+        Website: { type: 'url', url: 'https://example.com' }
+      }
+    })
+    expect(comment).toMatchObject({
+      author: 'Reader',
+      websiteUrl: 'https://example.com/'
+    })
+    expect(JSON.stringify(comment)).not.toContain('private@example.com')
+    expect(
+      formatNotionComment({
+        id: 'test',
+        properties: { Website: { type: 'url', url: 'javascript:alert(1)' } }
+      })
+    ).not.toHaveProperty('websiteUrl')
+  })
+
   test('filters non-public comments', () => {
     expect(isPublicComment({ status: '' })).toBe(true)
     expect(isPublicComment({ status: 'Approved' })).toBe(true)

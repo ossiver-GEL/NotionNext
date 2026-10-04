@@ -250,7 +250,7 @@ const LayoutSlug = props => {
             <div id='article-wrapper'>
               <NotionPage post={post} />
             </div>
-            <Comment frontMatter={post} />
+            <Comment frontMatter={post} hideSingleTab />
             <ArticleFooter />
           </>
         </article>

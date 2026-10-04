@@ -1,5 +1,5 @@
 import { buildCommentTree, countReplies } from '@/lib/plugins/notionComments'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 
 const ROOT_PAGE_SIZE = 10
 const REPLY_PAGE_SIZE = 2
@@ -19,11 +19,15 @@ const formatTime = value => {
 const getInitial = name => (name || '?').trim().slice(0, 1).toUpperCase()
 
 const NotionComments = ({ postId }) => {
+  const formId = useId()
   const [comments, setComments] = useState([])
   const [content, setContent] = useState('')
   const [author, setAuthor] = useState('')
   const [nickname, setNickname] = useState('')
   const [website, setWebsite] = useState('')
+  const [websiteUrl, setWebsiteUrl] = useState('')
+  const [preview, setPreview] = useState(false)
+  const [sortOrder, setSortOrder] = useState('newest')
   const [replyTo, setReplyTo] = useState('')
   const [expandedReplies, setExpandedReplies] = useState({})
   const [visibleReplyCounts, setVisibleReplyCounts] = useState({})
@@ -55,13 +59,19 @@ const NotionComments = ({ postId }) => {
     void loadComments()
   }, [loadComments, postId])
 
-  const commentTree = useMemo(() => buildCommentTree(comments), [comments])
+  const commentTree = useMemo(() => {
+    const direction = sortOrder === 'newest' ? -1 : 1
+    return buildCommentTree(comments).sort(
+      (a, b) => direction * (new Date(a.createdTime) - new Date(b.createdTime))
+    )
+  }, [comments, sortOrder])
   const visibleRoots = commentTree.slice(0, visibleRootCount)
   const replyTarget = comments.find(comment => comment.id === replyTo)
 
   const submitComment = async event => {
     event.preventDefault()
-    if (!content.trim() || !author.trim() || submitting) return
+    if (!content.trim() || !author.trim() || !nickname.trim() || submitting)
+      return
 
     setSubmitting(true)
     setError('')
@@ -76,13 +86,15 @@ const NotionComments = ({ postId }) => {
           author,
           nickname,
           parentId: replyTo,
-          website
+          website,
+          websiteUrl
         })
       })
       if (!response.ok) throw new Error('Failed to submit comment')
       const result = await response.json()
       setContent('')
       setReplyTo('')
+      setPreview(false)
       setNotice(
         result.pending ? '评论已提交，审核通过后显示。' : '评论已发布。'
       )
@@ -99,6 +111,7 @@ const NotionComments = ({ postId }) => {
 
   const startReply = comment => {
     setReplyTo(comment.id)
+    setPreview(false)
     setExpandedReplies(current => ({ ...current, [comment.id]: true }))
     setVisibleReplyCounts(current => ({
       ...current,
@@ -137,17 +150,27 @@ const NotionComments = ({ postId }) => {
     return (
       <article
         key={comment.id}
-        className={`flex gap-3 border-gray-200 py-4 dark:border-gray-700 ${
+        className={`nc-item flex gap-3 border-gray-200 py-4 dark:border-gray-700 ${
           level === 0 ? 'border-b' : 'border-l pl-3 sm:pl-4'
         }`}
       >
-        <div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-900 text-sm font-semibold text-white dark:bg-gray-100 dark:text-gray-900'>
+        <div className='nc-avatar flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-900 text-sm font-semibold text-white dark:bg-gray-100 dark:text-gray-900'>
           {getInitial(comment.author)}
         </div>
         <div className='min-w-0 flex-1'>
-          <header className='flex flex-wrap items-center gap-2 text-sm'>
+          <header className='nc-meta flex flex-wrap items-center gap-2 text-sm'>
             <span className='font-medium text-gray-900 dark:text-gray-100'>
-              {comment.author}
+              {comment.websiteUrl ? (
+                <a
+                  href={comment.websiteUrl}
+                  target='_blank'
+                  rel='nofollow ugc noopener noreferrer'
+                >
+                  {comment.author}
+                </a>
+              ) : (
+                comment.author
+              )}
             </span>
             <time className='text-gray-500 dark:text-gray-400'>
               {formatTime(comment.createdTime)}
@@ -198,9 +221,9 @@ const NotionComments = ({ postId }) => {
   }
 
   return (
-    <div className='space-y-5'>
-      <section className='rounded-md border border-gray-200 p-4 dark:border-gray-700'>
-        <div className='mb-3 flex items-center justify-between gap-3'>
+    <section className='notion-comments space-y-5' aria-label='评论区'>
+      <section className='nc-form rounded-md border border-gray-200 p-4 dark:border-gray-700'>
+        <div className='nc-form-heading mb-3 flex items-center justify-between gap-3'>
           <h3 className='text-base font-semibold text-gray-900 dark:text-gray-100'>
             评论
           </h3>
@@ -228,16 +251,75 @@ const NotionComments = ({ postId }) => {
             void submitComment(event)
           }}
         >
+          <div className='nc-fields grid gap-4 sm:grid-cols-3'>
+            <label htmlFor={`${formId}-nickname`} className='nc-field'>
+              <span>昵称 *</span>
+              <input
+                id={`${formId}-nickname`}
+                name='nickname'
+                autoComplete='nickname'
+                className='w-full min-w-0 border-b bg-transparent py-2 outline-none'
+                maxLength={40}
+                onChange={event => setNickname(event.target.value)}
+                required
+                value={nickname}
+              />
+            </label>
+            <label htmlFor={`${formId}-email`} className='nc-field'>
+              <span>邮箱 *</span>
+              <input
+                id={`${formId}-email`}
+                name='email'
+                autoComplete='email'
+                className='w-full min-w-0 border-b bg-transparent py-2 outline-none'
+                maxLength={254}
+                onChange={event => setAuthor(event.target.value)}
+                required
+                type='email'
+                value={author}
+              />
+            </label>
+            <label htmlFor={`${formId}-url`} className='nc-field'>
+              <span>网址（选填）</span>
+              <input
+                id={`${formId}-url`}
+                name='url'
+                autoComplete='url'
+                className='w-full min-w-0 border-b bg-transparent py-2 outline-none'
+                maxLength={2048}
+                onChange={event => setWebsiteUrl(event.target.value)}
+                type='url'
+                value={websiteUrl}
+                placeholder='https://'
+              />
+            </label>
+          </div>
+          <label htmlFor={`${formId}-content`} className='sr-only'>
+            评论内容
+          </label>
           <textarea
+            id={`${formId}-content`}
             ref={contentRef}
-            className='w-full rounded-md border border-gray-300 bg-transparent p-3 text-sm outline-none focus:border-blue-500 dark:border-gray-600'
-            maxLength={2000}
+            className={`nc-editor w-full bg-transparent text-sm leading-6 outline-none ${preview ? 'hidden' : ''}`}
+            maxLength={500}
             onChange={event => setContent(event.target.value)}
-            placeholder={replyTarget ? '写下回复...' : '写下你的评论...'}
+            placeholder={
+              replyTarget
+                ? '写下回复…'
+                : '仅支持纯文本。昵称和邮箱为必填项，邮箱不会公开。'
+            }
             required
-            rows={4}
+            rows={7}
             value={content}
           />
+          {preview && (
+            <div
+              className='nc-preview whitespace-pre-wrap break-words text-sm leading-6'
+              aria-label='评论预览'
+            >
+              {content || '还没有输入评论内容。'}
+            </div>
+          )}
           <input
             aria-hidden='true'
             autoComplete='off'
@@ -246,30 +328,33 @@ const NotionComments = ({ postId }) => {
             tabIndex={-1}
             value={website}
           />
-          <div className='grid gap-2 sm:grid-cols-[1fr_1fr_auto]'>
-            <input
-              className='min-w-0 rounded-md border border-gray-300 bg-transparent p-2 text-sm outline-none focus:border-blue-500 dark:border-gray-600'
-              maxLength={40}
-              onChange={event => setNickname(event.target.value)}
-              placeholder='昵称'
-              value={nickname}
-            />
-            <input
-              className='min-w-0 rounded-md border border-gray-300 bg-transparent p-2 text-sm outline-none focus:border-blue-500 dark:border-gray-600'
-              maxLength={254}
-              onChange={event => setAuthor(event.target.value)}
-              placeholder='邮箱，不会公开'
-              required
-              type='email'
-              value={author}
-            />
-            <button
-              type='submit'
-              className='rounded-md bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-60'
-              disabled={submitting}
-            >
-              {submitting ? '提交中...' : replyTarget ? '回复' : '评论'}
-            </button>
+          <div className='nc-toolbar flex items-center justify-between gap-4 text-sm'>
+            <span className='nc-counter' aria-live='polite'>
+              {content.length}/500
+            </span>
+            <div className='flex items-center gap-5'>
+              <button
+                type='button'
+                className='nc-text-button'
+                aria-pressed={preview}
+                onClick={() => setPreview(value => !value)}
+              >
+                {preview ? '继续编辑' : '预览'}
+              </button>
+              <button
+                type='submit'
+                className='nc-submit rounded-md bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-40'
+                disabled={
+                  submitting ||
+                  loading ||
+                  !content.trim() ||
+                  !nickname.trim() ||
+                  !author.trim()
+                }
+              >
+                {submitting ? '提交中…' : replyTarget ? '发布回复' : '发布'}
+              </button>
+            </div>
           </div>
         </form>
       </section>
@@ -295,7 +380,22 @@ const NotionComments = ({ postId }) => {
         </div>
       )}
 
-      <section>
+      <section className='nc-list'>
+        <div className='nc-list-heading flex items-center justify-between gap-4'>
+          <h2>{comments.length} 条评论</h2>
+          <select
+            aria-label='评论排序'
+            className='bg-transparent text-sm'
+            value={sortOrder}
+            onChange={event => {
+              setSortOrder(event.target.value)
+              setVisibleRootCount(ROOT_PAGE_SIZE)
+            }}
+          >
+            <option value='newest'>最新评论</option>
+            <option value='oldest'>最早评论</option>
+          </select>
+        </div>
         {loading ? (
           <div className='space-y-3'>
             {[0, 1, 2].map(item => (
@@ -321,12 +421,12 @@ const NotionComments = ({ postId }) => {
             )}
           </>
         ) : (
-          <p className='rounded-md border border-dashed border-gray-300 py-8 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400'>
+          <p className='nc-empty py-8 text-sm text-gray-500 dark:text-gray-400'>
             还没有评论，来写第一条吧。
           </p>
         )}
       </section>
-    </div>
+    </section>
   )
 }
 
