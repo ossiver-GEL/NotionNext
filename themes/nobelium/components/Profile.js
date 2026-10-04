@@ -2,19 +2,33 @@ import SmartLink from '@/components/SmartLink'
 import { siteConfig } from '@/lib/config'
 import LazyImage from '@/components/LazyImage'
 import { resolveContactEmail } from '@/lib/plugins/mailEncrypt'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export default function Profile({ siteInfo }) {
   const github = siteConfig('CONTACT_GITHUB')
   const email = resolveContactEmail(siteConfig('CONTACT_EMAIL')).trim()
   const [copyStatus, setCopyStatus] = useState('')
+  const copyTimer = useRef(null)
+  const copyRequest = useRef(0)
+
+  useEffect(() => {
+    return () => {
+      clearTimeout(copyTimer.current)
+      copyRequest.current += 1
+    }
+  }, [])
 
   const copyEmail = async () => {
+    const request = ++copyRequest.current
+    clearTimeout(copyTimer.current)
     setCopyStatus('')
     try {
       await navigator.clipboard.writeText(email)
+      if (request !== copyRequest.current) return
       setCopyStatus('邮箱已复制')
+      copyTimer.current = setTimeout(() => setCopyStatus(''), 3000)
     } catch {
+      if (request !== copyRequest.current) return
       setCopyStatus(`无法自动复制，请手动复制：${email}`)
     }
   }
