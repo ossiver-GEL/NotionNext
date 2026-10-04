@@ -2,21 +2,20 @@ import SmartLink from '@/components/SmartLink'
 import { siteConfig } from '@/lib/config'
 import LazyImage from '@/components/LazyImage'
 import { resolveContactEmail } from '@/lib/plugins/mailEncrypt'
-import { useId, useState } from 'react'
+import { useState } from 'react'
 
 export default function Profile({ siteInfo }) {
   const github = siteConfig('CONTACT_GITHUB')
   const email = resolveContactEmail(siteConfig('CONTACT_EMAIL')).trim()
-  const emailPanelId = useId()
-  const [emailOpen, setEmailOpen] = useState(false)
   const [copyStatus, setCopyStatus] = useState('')
 
   const copyEmail = async () => {
+    setCopyStatus('')
     try {
       await navigator.clipboard.writeText(email)
       setCopyStatus('邮箱已复制')
     } catch {
-      setCopyStatus('复制失败，请选中邮箱地址手动复制。')
+      setCopyStatus(`无法自动复制，请手动复制：${email}`)
     }
   }
   return (
@@ -52,14 +51,9 @@ export default function Profile({ siteInfo }) {
           {email && (
             <button
               type='button'
-              aria-label='邮箱联系方式'
-              title='邮箱联系方式'
-              aria-expanded={emailOpen}
-              aria-controls={emailPanelId}
-              onClick={() => {
-                setEmailOpen(open => !open)
-                setCopyStatus('')
-              }}
+              aria-label='复制邮箱'
+              title='复制邮箱'
+              onClick={() => void copyEmail()}
             >
               <svg
                 viewBox='0 0 24 24'
@@ -90,20 +84,9 @@ export default function Profile({ siteInfo }) {
             </svg>
           </SmartLink>
         </div>
-        {email && emailOpen && (
-          <div id={emailPanelId} className='reading-email-panel'>
-            <a href={`mailto:${email}`} className='reading-email-address'>
-              {email}
-            </a>
-            <div className='reading-email-actions'>
-              <button type='button' onClick={() => void copyEmail()}>
-                复制邮箱
-              </button>
-              <a href={`mailto:${email}`}>打开邮件应用</a>
-            </div>
-            <div className='reading-email-status' role='status'>
-              {copyStatus || '也可以复制地址，在常用邮箱中写信。'}
-            </div>
+        {email && (
+          <div className='reading-email-status' role='status'>
+            {copyStatus}
           </div>
         )}
       </div>
