@@ -1,5 +1,6 @@
 import { Client } from '@notionhq/client'
 import { createHash } from 'node:crypto'
+import { verifyCommentTurnstile } from '@/lib/plugins/commentTurnstile'
 import {
   formatNotionComment,
   getPlainText,
@@ -120,7 +121,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    const notion = getClient()
     if (validation.spam) {
       return res.status(200).json({ ok: true })
     }
@@ -130,6 +130,14 @@ export default async function handler(req, res) {
       return res.status(429).json({ error: 'Too many comments' })
     }
 
+    const verification = await verifyCommentTurnstile(req.body?.turnstileToken)
+    if (!verification.ok) {
+      return res.status(verification.status).json({
+        error: verification.error,
+        code: verification.code
+      })
+    }
+    const notion = getClient()
     const properties = await getDatabaseProperties(notion)
     const { postId, content, author, nickname, websiteUrl, parentId } =
       validation.value

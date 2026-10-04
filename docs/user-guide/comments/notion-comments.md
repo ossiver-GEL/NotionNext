@@ -154,6 +154,27 @@ Integration 可以理解成“给 NotionNext 使用的机器人账号”。Notio
 
 ## 配置环境变量
 
+### 可选：Cloudflare Turnstile 人机验证
+
+在 Cloudflare 的 Turnstile 页面创建一个 Managed 模式的 widget，允许实际博客域名，然后在部署平台添加：
+
+```bash
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=your_site_key
+TURNSTILE_SECRET_KEY=your_secret_key
+# 可选：多个允许域名用英文逗号分隔；省略时使用 NEXT_PUBLIC_LINK 的域名
+TURNSTILE_ALLOWED_HOSTNAMES=your-blog.example.com
+```
+
+保存后重新部署。Site key 会用于浏览器中的验证框；Secret key 仅供服务端调用 Cloudflare Siteverify，不要添加 `NEXT_PUBLIC_` 前缀。
+
+服务端校验 token、域名和 `notion-comment` action；缺少、过期或重复使用的 token 不会写入 Notion。网络异常或配置不完整时也会拒绝提交，并保留访客输入以便重试。验证不影响公开评论的读取和原有审核流程。
+
+两个 key 都未配置时保留原有留言方式。正式站点请使用自己的生产密钥；Cloudflare 提供的测试密钥仅用于开发测试。更换博客域名时，同步修改 widget 允许域名以及 `NEXT_PUBLIC_LINK` 或 `TURNSTILE_ALLOWED_HOSTNAMES`。
+
+参考：[Cloudflare 接入说明](https://developers.cloudflare.com/turnstile/get-started/)。
+
+### Notion 评论存储
+
 在 Vercel、Netlify、Zeabur、服务器 `.env` 等部署环境中添加：
 
 ```bash

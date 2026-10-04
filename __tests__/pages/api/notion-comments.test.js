@@ -36,6 +36,10 @@ describe('Notion comment storage', () => {
     process.env.NOTION_COMMENT_DATABASE_ID = 'test-database'
     process.env.NOTION_TOKEN = 'test-token'
     process.env.NOTION_COMMENT_REQUIRE_APPROVAL = 'true'
+    delete process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+    delete process.env.TURNSTILE_SECRET_KEY
+    delete process.env.TURNSTILE_ALLOWED_HOSTNAMES
+    global.fetch.mockReset()
     handler = require('@/pages/api/notion-comments').default
   })
 
@@ -54,6 +58,16 @@ describe('Notion comment storage', () => {
   })
 
   test('stores a pending comment and profile URL without returning its email', async () => {
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = 'test-site-key'
+    process.env.TURNSTILE_SECRET_KEY = 'test-secret'
+    global.fetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        success: true,
+        hostname: 'test.com',
+        action: 'notion-comment'
+      })
+    })
     mockDatabaseRetrieve.mockResolvedValue({
       properties: {
         Status: { type: 'select' },
@@ -72,7 +86,9 @@ describe('Notion comment storage', () => {
       }
     }))
     const res = response()
-    await handler(request(), res)
+    const req = request()
+    req.body.turnstileToken = 'fresh-token'
+    await handler(req, res)
     expect(mockPageCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         properties: expect.objectContaining({
@@ -115,5 +131,36 @@ describe('Notion comment storage', () => {
     expect(JSON.stringify(res.json.mock.calls)).not.toContain(
       'private@example.com'
     )
+  })
+
+  test.each([undefined, 'expired-token'])(
+    'blocks missing or rejected verification before accessing Notion (%s)',
+    async turnstileToken => {
+      process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = 'test-site-key'
+      process.env.TURNSTILE_SECRET_KEY = 'test-secret'
+      global.fetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: false })
+      })
+      const req = request()
+      req.body.turnstileToken = turnstileToken
+      const res = response()
+      await handler(req, res)
+      expect(res.status).toHaveBeenCalledWith(403)
+      expect(mockDatabaseRetrieve).not.toHaveBeenCalled()
+      expect(mockPageCreate).not.toHaveBeenCalled()
+    }
+  )
+
+  test('does not bypass verification when its service is unavailable', async () => {
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = 'test-site-key'
+    process.env.TURNSTILE_SECRET_KEY = 'test-secret'
+    global.fetch.mockRejectedValue(new Error('network unavailable'))
+    const req = request()
+    req.body.turnstileToken = 'fresh-token'
+    const res = response()
+    await handler(req, res)
+    expect(res.status).toHaveBeenCalledWith(503)
+    expect(mockPageCreate).not.toHaveBeenCalled()
   })
 })

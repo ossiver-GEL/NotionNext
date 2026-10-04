@@ -1,8 +1,10 @@
 import { buildCommentTree, countReplies } from '@/lib/plugins/notionComments'
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import CommentTurnstile from './CommentTurnstile'
 
 const ROOT_PAGE_SIZE = 10
 const REPLY_PAGE_SIZE = 2
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim()
 
 const formatTime = value => {
   const date = new Date(value)
@@ -36,6 +38,8 @@ const NotionComments = ({ postId }) => {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const [verificationReset, setVerificationReset] = useState(0)
   const contentRef = useRef(null)
 
   const loadComments = useCallback(async () => {
@@ -72,6 +76,10 @@ const NotionComments = ({ postId }) => {
     event.preventDefault()
     if (!content.trim() || !author.trim() || !nickname.trim() || submitting)
       return
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
+      setError('请先完成人机验证')
+      return
+    }
 
     setSubmitting(true)
     setError('')
@@ -87,11 +95,23 @@ const NotionComments = ({ postId }) => {
           nickname,
           parentId: replyTo,
           website,
-          websiteUrl
+          websiteUrl,
+          turnstileToken
         })
       })
-      if (!response.ok) throw new Error('Failed to submit comment')
       const result = await response.json()
+      if (!response.ok) {
+        const messages = {
+          'verification-failed': '人机验证未通过或已过期，请重新验证后提交。',
+          'verification-unavailable': '人机验证暂时不可用，请稍后重试。'
+        }
+        throw new Error(
+          messages[result.code] ||
+            (response.status === 429
+              ? '提交过于频繁，请稍后重试。'
+              : '评论提交失败，请稍后重试')
+        )
+      }
       setContent('')
       setReplyTo('')
       setPreview(false)
@@ -103,8 +123,17 @@ const NotionComments = ({ postId }) => {
       }
       await loadComments()
     } catch (error) {
-      setError('评论提交失败，请稍后重试')
+      setError(
+        error.message.startsWith('人机验证') ||
+          error.message.startsWith('提交过于频繁')
+          ? error.message
+          : '评论提交失败，请稍后重试'
+      )
     } finally {
+      if (TURNSTILE_SITE_KEY) {
+        setTurnstileToken('')
+        setVerificationReset(current => current + 1)
+      }
       setSubmitting(false)
     }
   }
@@ -347,6 +376,7 @@ const NotionComments = ({ postId }) => {
                 disabled={
                   submitting ||
                   loading ||
+                  (TURNSTILE_SITE_KEY && !turnstileToken) ||
                   !content.trim() ||
                   !nickname.trim() ||
                   !author.trim()
@@ -356,6 +386,13 @@ const NotionComments = ({ postId }) => {
               </button>
             </div>
           </div>
+          {TURNSTILE_SITE_KEY && (
+            <CommentTurnstile
+              siteKey={TURNSTILE_SITE_KEY}
+              onTokenChange={setTurnstileToken}
+              resetKey={verificationReset}
+            />
+          )}
         </form>
       </section>
 
