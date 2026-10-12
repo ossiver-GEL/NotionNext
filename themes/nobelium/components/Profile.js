@@ -5,6 +5,7 @@ import { resolveContactEmail } from '@/lib/plugins/mailEncrypt'
 import { useEffect, useRef, useState } from 'react'
 
 export default function Profile({ siteInfo }) {
+  const avatar = siteConfig('AVATAR', siteInfo?.icon)
   const github = siteConfig('CONTACT_GITHUB')
   const email = resolveContactEmail(siteConfig('CONTACT_EMAIL')).trim()
   const [copyStatus, setCopyStatus] = useState('')
@@ -34,9 +35,9 @@ export default function Profile({ siteInfo }) {
   }
   return (
     <section className='reading-profile' aria-label='作者介绍'>
-      {siteInfo?.icon && (
+      {avatar && (
         <LazyImage
-          src={siteInfo.icon}
+          src={avatar}
           width={64}
           height={64}
           alt=''
